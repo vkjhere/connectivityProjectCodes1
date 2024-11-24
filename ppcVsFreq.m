@@ -1,8 +1,8 @@
 % To plot PPC vs freq and cos(theta) of different elecs wrt seeds
 
 comparisonStr = 'paired';
-protocolName = 'EO1';
-analysisChoice = 'bl';
+protocolName = 'G1';
+analysisChoice = 'st';
 
 badEyeCondition = 'ep';
 badTrialVersion = 'v8';
@@ -82,38 +82,6 @@ saveFolderName = 'savedData1';
 [connData,freqVals,connDataBinwise,binnedCenters] = getConnDataAllSubjectsV(subjectNameLists,electrodeList,connMethod,badEyeCondition,badTrialVersion,protocolName,analysisChoice,cutoffList,pairedDataFlag,saveFolderName,montageChanlocs);
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% plots: PPC vs freq and elec_index %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% % to define common scale of coorbar for all 3 plots
-% meanData1 = squeeze(mean((connData{1}),1, 'omitnan'));
-% meanData2 = squeeze(mean((connData{2}),1, 'omitnan'));
-% diffData = squeeze(mean((connData{1} - connData{2}),1, 'omitnan'));
-% % Determine the common color limits
-% cmin = min([min(meanData1(:)), min(meanData2(:)), min(diffData(:))]);
-% cmax = max([max(meanData1(:)), max(meanData2(:)), max(diffData(:))]);
-
-
-% figure(1)
-% sgtitle(['PPC wrt elecs ', num2str(electrodeList),  ' during ',protocolName]);
-% 
-% subplot(131) % meditators
-% pcolor(freqVals, 1:64, squeeze(mean((connData{1}),1, 'omitnan')));
-% colormap("jet"); shading interp;  
-% shading interp;  axis tight; % clim([cmin cmax]);
-% %xlim([5 40]);
-% xlabel('frequency'); ylabel('elec index'); title('meditators');
-% 
-% subplot(132) %control
-% pcolor(freqVals, 1:64, squeeze(mean((connData{2}),1, 'omitnan')));
-% shading interp;  axis tight; %clim([cmin cmax]);
-% %xlim([ 5 40]);
-% xlabel('frequency'); ylabel('elec index'); title('controls');
-% 
-% subplot(133) % diff
-% pcolor(freqVals, 1:64, squeeze(mean((connData{1}-connData{2}),1, 'omitnan')));
-% shading interp; colorbar; axis tight; %clim([cmin cmax]);
-% %xlim([ 5 40]);
-% xlabel('frequency'); ylabel('elec index'); title('med - con');
-
 %%%%%%%%%%%%%%%%%%%%%%% plots: PPC vs freq and cos(theta)%%%%%%%%%%%%%%%%%%%%%
 % to define common scale of coorbar for the first 2 plots. Difference
 % plot's color scale is kept free.
@@ -146,7 +114,7 @@ set(gca, 'XTick', uniform_xticks);
 set(gca, 'XTickLabel', arrayfun(@num2str, uniform_xticks, 'UniformOutput', false));
 shading interp;  axis tight;   clim([cmin cmax]);
 %xlim([20 40]);
-xlabel('frequency'); ylabel('cos (theta)'); title('meditators');
+xlabel('frequency'); ylabel('cos (theta)'); title('Meditators');
 
 subplot(312) %control
 pcolor(freqVals, binnedCenters, squeeze(mean((connDataBinwise{2}),1, 'omitnan')));
@@ -155,7 +123,7 @@ set(gca, 'XScale', 'log');
 set(gca, 'XTick', uniform_xticks);
 set(gca, 'XTickLabel', arrayfun(@num2str, uniform_xticks, 'UniformOutput', false));
 %xlim([ 20 40]);
-xlabel('frequency'); ylabel('cos (theta)'); title('controls');
+xlabel('frequency'); ylabel('cos (theta)'); title('Controls');
 
 subplot(313) % diff
 pcolor(freqVals, binnedCenters, squeeze(mean((connDataBinwise{1}-connDataBinwise{2}),1, 'omitnan'))); 
@@ -164,9 +132,104 @@ set(gca, 'XScale', 'log');
 set(gca, 'XTick', uniform_xticks);
 set(gca, 'XTickLabel', arrayfun(@num2str, uniform_xticks, 'UniformOutput', false));
 %xlim([ 20 45]);
-xlabel('frequency'); ylabel('cos (theta)'); title('med - con');
+xlabel('frequency'); ylabel('cos (theta)'); title('diff.');
 
-%%%%%%%% functions %%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%% functions %%%%%%%%%%%%%%%%%%%%%%%%%%
+function [connData,freqVals,connDataBinwise,binnedCenters] = getConnDataAllSubjectsV(subjectNameLists,electrodeList,connMethod,badEyeCondition,badTrialVersion,protocolName,analysisChoice,cutoffList,pairedDataFlag,saveFolderName,montageChanlocs)
+
+%%%%% Discretize connectivty into bins depending on distance from seed %%%%
+binWidth = 0.25;
+binEdges = -1:binWidth:1;
+nbins = length(binEdges)-1;
+binnedCenters = binEdges(1:end-1)+(binWidth/2);
+loc = getElecLocAngles(montageChanlocs);
+
+numElectrodes = length(electrodeList); % = 3 or 4 usually
+binnedIndicesAllElectrodes = cell(numElectrodes,nbins);
+
+for e=1:numElectrodes % 3 or 4 usually
+    dist = sqrt((angl_dist(loc.azi(electrodeList(e)),loc.azi,'a')).^2+(angl_dist(loc.ele(electrodeList(e)),loc.ele,'e')).^2);
+    fitx = cos((dist/180)*pi);
+    binned_fitx = discretize(fitx,binEdges);
+    
+    for b = 1:nbins % number of bins
+        binnedIndicesAllElectrodes{e,b} = find(binned_fitx == b); % w r t each of the given 3 or 4 elecs, 
+        % it calculates the electrodes which have cos(dist) in different bins like (0.5 0.75)
+        % bin_index = 8 means, cos (dist) = 1; so the 2 electrodes are close to
+        % each other.
+    end
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Initialize
+badSubjectList = cell(1,2);
+connDataTMP = cell(1,2);
+connDataBinwiseTMP = cell(1,2);
+
+for i=1:2
+    for j=1:length(subjectNameLists{i}) % 2 lists: med and con
+        subjectName = subjectNameLists{i}{j};
+
+        tmpData = load(fullfile(saveFolderName,subjectName,[protocolName '_' badEyeCondition '_' badTrialVersion '_' connMethod]));
+        numGoodTrials = tmpData.numGoodTrials;
+
+        if numGoodTrials<cutoffList(2)
+            badSubjectList{i}(j) = 1;
+        else
+            if strcmp(analysisChoice,'bl')
+                connDataTMP2 = tmpData.connPre(electrodeList,:,:); % conn 64*64 elecs for the given subject
+                freqVals = tmpData.freqPre;
+            elseif strcmp(analysisChoice,'st')
+                connDataTMP2 = tmpData.connPost(electrodeList,:,:);
+                freqVals = tmpData.freqPost;
+            else
+                connDataTMP2 = (tmpData.connPre(electrodeList,:,:) + tmpData.connPost(electrodeList,:,:))/2;
+                freqVals = tmpData.freqPost;
+            end
+
+            numGoodElectodes = trace(~isnan(squeeze(connDataTMP2(:,electrodeList,1))));
+
+            if numGoodElectodes >= cutoffList(1)
+                badSubjectList{i}(j) = 0;
+                connDataTMP{i}{j} = squeeze(mean(connDataTMP2,1,'omitnan'));
+                
+                connDataBinwiseTMP2 = zeros(numElectrodes,nbins,length(freqVals));
+                for e=1:numElectrodes
+                    for b=1:nbins
+                         connDataBinwiseTMP2(e,b,:) = squeeze(mean(connDataTMP2(e,binnedIndicesAllElectrodes{e,b},:),2,'omitnan'));
+                    end
+                end
+                connDataBinwiseTMP{i}{j} = squeeze(mean(connDataBinwiseTMP2,1,'omitnan'));
+            else
+                badSubjectList{i}(j) = 1;
+            end
+        end
+    end
+end
+
+% Remove bad subjects
+connData = cell(1,2);
+connDataBinwise = cell(1,2);
+
+for i=1:2
+    if pairedDataFlag
+        badSubjectPos = find(sum(cell2mat(badSubjectList')));
+    else
+        badSubjectPos = find(badSubjectList{i});
+    end
+    x1 = connDataTMP{i};
+    x1(badSubjectPos)=[];
+    x2 = connDataBinwiseTMP{i};
+    x2(badSubjectPos)=[];
+
+    numSubjects = length(x1);
+    for j=1:numSubjects
+        connData{i}(j,:,:) = x1{j};
+        connDataBinwise{i}(j,:,:) = x2{j};
+    end
+end
+end
+
+%%%%%%%%%%%% functions %%%%%%%%%%%%%%%%%%%
 
 function out_theta = angl_dist(in_theta_ref,in_theta,val)
 if(strcmp(val,'a')) % azimuth (addressing Cz issue)
