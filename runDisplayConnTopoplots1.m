@@ -1,6 +1,6 @@
 % plotFigures
 comparisonStr = 'paired';
-protocolName = 'G1';
+protocolName = 'M2';
 analysisChoice = 'st';
 
 badEyeCondition = 'ep';
@@ -8,11 +8,11 @@ badTrialVersion = 'v8';
 
 freqRangeList{1} = [8 12];
 %  freqRangeList{2} = [24 34];
-freqRangeList{2} = [20 25];
+freqRangeList{2} = [20 30];
 % freqRangeList{3} = [30 80];
 freqRangeList{3} = [60  98];
 
-electrodeList = [16 17 18 48]; %(O1-Oz-O2-POz);  [14 44 47];%(P3-P1-PO3)     % [19 49 52];%(P4-PO4-P2) ;           % ; % 
+refElectrodes = [16 17 18 48]; %(O1-Oz-O2-POz);  [14 44 47];%(P3-P1-PO3)     % [19 49 52];%(P4-PO4-P2) ;           % ; % 
 connMethod = 'ppc';
 displayDataFlag = 1;
 
@@ -38,4 +38,4 @@ end
 hAllPlots = [];
 
 
-[connDataToReturn,goodSubjectNameListsToReturn,topoplotDataToReturn,freqVals] = displayConnTopoplotsAllSubjects1(subjectNameLists,protocolName,analysisChoice,electrodeList,connMethod,badEyeCondition,badTrialVersion,freqRangeList,axisRangeList,cutoffList,useMedianFlag,hAllPlots,pairedDataFlag,1);
+[connDataToReturn,goodSubjectNameListsToReturn,topoplotDataToReturn,freqVals] = displayConnTopoplotsAllSubjects1(subjectNameLists,protocolName,analysisChoice,refElectrodes,connMethod,badEyeCondition,badTrialVersion,freqRangeList,axisRangeList,cutoffList,useMedianFlag,hAllPlots,pairedDataFlag,1);
