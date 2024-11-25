@@ -1,9 +1,9 @@
 % To plot PPC vs freq and cos(theta) of different elecs wrt seeds
 
-if ~exist('groupType','var');       groupType='rel';                    end % 'rel' or 'abs'
+groupType='rel';       % rel or abs           
 comparisonStr = 'paired';
-protocolName = 'G1';
-analysisChoice = 'st';
+protocolName = 'EC1';
+analysisChoice = 'bl';
 
 badEyeCondition = 'ep';
 badTrialVersion = 'v8';
@@ -74,7 +74,7 @@ binRange = [-0.5 0.5]; % why?
 %%%%%%%%%%%%%%%%%%%%%%%%%% Get topoplot info %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 capType = 'actiCap64_UOL';
 x = load([capType '.mat']); 
-montageChanlocs = x.chanlocs; % channel locations x,y,z etc.
+%montageChanlocs = x.chanlocs; % channel locations x,y,z etc.
 
 saveFolderName = 'savedData1';
 
@@ -83,6 +83,7 @@ saveFolderName = 'savedData1';
 %[connData,freqVals,connDataElectrodeGroup,binnedCenters] = getConnDataAllSubjectsV(subjectNameLists,electrodeList,connMethod,badEyeCondition,badTrialVersion,protocolName,analysisChoice,cutoffList,pairedDataFlag,saveFolderName,montageChanlocs);
 
 [connData,freqVals,connDataElectrodeGroup,electrodeGroupList,groupNameList,binnedCenters] = getConnDataAllSubjects(subjectNameLists,refElectrodes,groupType,connMethod,badEyeCondition,badTrialVersion,protocolName,analysisChoice,cutoffList,pairedDataFlag,saveFolderName,capType);
+binnedCenters = flip(binnedCenters);
 %%%%%%%%%%%%%%%%%%%%%%% plots: PPC vs freq and cos(theta)%%%%%%%%%%%%%%%%%%%%%
 % to define common scale of coorbar for the first 2 plots. Difference
 % plot's color scale is kept free.
@@ -103,9 +104,9 @@ uniform_xticks = freqVals(1:n:end);
 
 % plotting ppc just for nearby electrodes (back hemisphere) : cos(dist) :
 % [0 1]
-binnedCenters = binnedCenters(5:8); 
-connDataElectrodeGroup{1} = connDataElectrodeGroup{1}(:,5:8,:);
-connDataElectrodeGroup{2} = connDataElectrodeGroup{2}(:,5:8,:);
+
+connDataElectrodeGroup{1} = connDataElectrodeGroup{1};
+connDataElectrodeGroup{2} = connDataElectrodeGroup{2};
 
 subplot(311) % meditators
 pcolor(freqVals, binnedCenters, squeeze(mean((connDataElectrodeGroup{1}),1, 'omitnan')));
@@ -115,7 +116,7 @@ set(gca, 'XTick', uniform_xticks);
 set(gca, 'XTickLabel', arrayfun(@num2str, uniform_xticks, 'UniformOutput', false));
 shading interp;  axis tight;   clim([cmin cmax]);
 %xlim([20 40]);
-xlabel('frequency'); ylabel('cos (theta)'); title('Meditators');
+xlabel('frequency'); ylabel('cos (theta)'); title('Mditators');
 
 subplot(312) %control
 pcolor(freqVals, binnedCenters, squeeze(mean((connDataElectrodeGroup{2}),1, 'omitnan')));
@@ -135,7 +136,6 @@ set(gca, 'XTickLabel', arrayfun(@num2str, uniform_xticks, 'UniformOutput', false
 %xlim([ 20 45]);
 xlabel('frequency'); ylabel('cos (theta)'); title('diff.');
 
-%%%%%%%%%%%%%%%%%%%%% functions %%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%% Functions %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [connData,freqVals,connDataElectrodeGroup,electrodeGroupList,groupNameList,binnedCenters] = getConnDataAllSubjects(subjectNameLists,refElectrodes,groupType,connMethod,badEyeCondition,badTrialVersion,protocolName,analysisChoice,cutoffList,pairedDataFlag,saveFolderName,capType)
 [electrodeGroupList,groupNameList,binnedCenters] = getElectrodeGroupsConn(groupType,refElectrodes,capType);
