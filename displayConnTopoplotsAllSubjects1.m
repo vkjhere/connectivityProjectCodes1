@@ -58,7 +58,7 @@ montageChanlocs = x.chanlocs; % channel locations x,y,z etc.
 saveFolderName = 'savedData1';
 %%%%%%%%%%%%%%%%%%%%%%%%%%%% Generate plots %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 figure(1)
-sgtitle(['PPC wrt elecs ', num2str(electrodeList) , ' during ',protocolName]);
+sgtitle(['PPC wrt elecs ', num2str(refElectrodes) , ' during ',protocolName]);
 if displayDataFlag
     if isempty(hAllPlots)
         hTopo = getPlotHandles(numFreqRanges,3,[0.08 0.06 0.45 0.85],0.025,0.025,1);
@@ -85,6 +85,7 @@ for i = 1:numFreqRanges
 end
 
 goodBinPos = intersect(find(binnedCenters>=binRange(1)),find(binnedCenters<=binRange(2)));
+numElectrodeGroups = length(electrodeGroupList);
 %%%%%%%%%%%%%%%%%%%%%%%%%%% Show Results %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 topoplotDataToReturn = cell(2,numFreqRanges);
 connDataToReturn = cell(2,numFreqRanges);
@@ -127,7 +128,7 @@ for j=1:numFreqRanges
     end
 
 
-        displayAndcompareData(hConn(j),x1, binnedCenters, displaySettings,[0 1],1,useMedianFlag);
+        displayAndcompareData(hConn(j),x1, 1:numElectrodeGroups, displaySettings,[0 1],1,useMedianFlag);
                 if j==1
                 title('PPC vs cos(theta)');
                 end
